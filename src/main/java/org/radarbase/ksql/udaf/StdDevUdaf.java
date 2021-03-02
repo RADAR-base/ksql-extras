@@ -31,7 +31,7 @@ public class StdDevUdaf {
 
         @Override
         public List<Float> aggregate(Float current, List<Float> aggregate) {
-            aggregate.add(current);
+            if (current!=null) aggregate.add(current);
             return aggregate;
         }
 
