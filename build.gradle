@@ -39,6 +39,6 @@ compileJava {
 
 shadowJar {
     archiveBaseName = "ksql-extras"
-    archiveClassifier = ""
+    archiveClassifier = "shadow"
     destinationDirectory = file("extensions")
 }
