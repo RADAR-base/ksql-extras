@@ -7,6 +7,8 @@ buildscript {
 plugins {
     id "java"
     id "com.github.johnrengelman.shadow" version "6.0.0"
+    id 'checkstyle'
+    id 'pmd'
 }
 
 sourceCompatibility = "1.8"
@@ -39,6 +41,19 @@ compileJava {
 
 shadowJar {
     archiveBaseName = "ksql-extras"
-    archiveClassifier = ""
+    archiveClassifier = "shadow"
     destinationDirectory = file("extensions")
 }
+
+pmd {
+    consoleOutput = true
+    toolVersion = "6.21.0"
+}
+
+checkstyle {
+    configDir file("config/checkstyle")
+    toolVersion "8.20"
+    showViolations = false
+}
+
+assemble.dependsOn shadowJar
