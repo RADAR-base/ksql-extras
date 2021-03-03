@@ -13,7 +13,7 @@ public abstract class UniformSamplingReservoirDoubleUdaf implements Udaf<Double,
     public static final String SAMPLES = "SAMPLES";
     public static final String COUNT = "COUNT";
     public static final Schema STRUCT_RESERVOIR = SchemaBuilder.struct().optional()
-            .field(SAMPLES, SchemaBuilder.array(Schema.OPTIONAL_FLOAT64_SCHEMA).optional())
+            .field(SAMPLES, SchemaBuilder.array(Schema.OPTIONAL_FLOAT64_SCHEMA).optional().build())
             .field(COUNT, Schema.OPTIONAL_INT64_SCHEMA)
             .build();
     private static final int MAX_SIZE_DEFAULT = 9999;
@@ -32,7 +32,7 @@ public abstract class UniformSamplingReservoirDoubleUdaf implements Udaf<Double,
         return new Struct(STRUCT_RESERVOIR)
                 .put(SAMPLES, new ArrayList<Double>() {
                 })
-                .put(COUNT, 0);
+                .put(COUNT, 0L);
     }
 
     @Override

@@ -30,7 +30,7 @@ public class SkewnessUdaf {
 
         @Override
         public Double map(Struct agg) {
-            List<Float> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
+            List<Double> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
             if (samples.isEmpty()) return 0.0;
 
             return new Skewness().evaluate(samples.stream().mapToDouble(v -> v).toArray());

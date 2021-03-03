@@ -17,7 +17,7 @@ public class StdDevUdaf {
     }
 
     @UdafFactory(
-            description = "Calculates the standard deviation of float values in a stream.",
+            description = "Calculates the standard deviation of double values in a stream.",
             aggregateSchema = "STRUCT<SAMPLES ARRAY<double>, COUNT bigint>"
     )
     public static Udaf<Double, Struct, Double> createUdaf() {

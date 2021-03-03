@@ -29,7 +29,7 @@ public class ModeUdaf {
 
         @Override
         public Double map(Struct agg) {
-            List<Float> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
+            List<Double> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
             if (samples.isEmpty()) return 0.0;
 
             return StatUtils.mode(samples.stream().mapToDouble(v -> v).toArray())[0];
