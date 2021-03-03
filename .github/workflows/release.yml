@@ -35,10 +35,6 @@ jobs:
       - name: Compile code
         run: ./gradlew assemble
 
-      # Generate shadowJar
-      - name: Shadow Jar
-        run: ./gradlew shadowJar
-
       # Upload it to GitHub
       - name: Upload to GitHub
         uses: AButler/upload-release-assets@v2.0

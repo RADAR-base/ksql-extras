@@ -43,6 +43,3 @@ jobs:
       # Gradle check
       - name: Check
         run: ./gradlew check
-
-      - name: Shadow Jar
-        run: ./gradlew shadowJar
