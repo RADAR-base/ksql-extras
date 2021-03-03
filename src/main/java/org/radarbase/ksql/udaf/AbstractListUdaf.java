@@ -19,6 +19,7 @@ public abstract class AbstractListUdaf<T> implements Udaf<T, List<T>, T> {
 
     @Override
     public List<T> merge(List<T> aggOne, List<T> aggTwo) {
-        return aggTwo;
+        aggOne.addAll(aggTwo);
+        return aggOne;
     }
 }
