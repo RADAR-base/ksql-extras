@@ -20,20 +20,20 @@ public class SkewnessUdaf {
 
     @UdafFactory(
             description = "Calculates the skewness of values in a stream.",
-            aggregateSchema = "STRUCT<VALUES ARRAY<float>, COUNT bigint>"
+            aggregateSchema = "STRUCT<SAMPLES ARRAY<double>, COUNT bigint>"
     )
-    public static Udaf<Float, Struct, Float> createUdaf() {
+    public static Udaf<Double, Struct, Double> createUdaf() {
         return new SkewnessUdafImpl();
     }
 
-    private static class SkewnessUdafImpl extends UniformSamplingReservoirFloatUdaf {
+    private static class SkewnessUdafImpl extends UniformSamplingReservoirDoubleUdaf {
 
         @Override
-        public Float map(Struct agg) {
-            List<Float> samples = agg.getArray(UniformSamplingReservoirFloatUdaf.VALUES);
-            if (samples.isEmpty()) return 0f;
+        public Double map(Struct agg) {
+            List<Float> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
+            if (samples.isEmpty()) return 0.0;
 
-            return (float) new Skewness().evaluate(samples.stream().mapToDouble(v -> v).toArray());
+            return new Skewness().evaluate(samples.stream().mapToDouble(v -> v).toArray());
         }
     }
 

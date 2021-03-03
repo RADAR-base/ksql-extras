@@ -19,20 +19,20 @@ public class MedianUdaf {
 
     @UdafFactory(
             description = "Calculates the median of values in a stream.",
-            aggregateSchema = "STRUCT<VALUES ARRAY<float>, COUNT bigint>"
+            aggregateSchema = "STRUCT<SAMPLES ARRAY<double>, COUNT bigint>"
     )
-    public static Udaf<Float, Struct, Float> createUdaf() {
+    public static Udaf<Double, Struct, Double> createUdaf() {
         return new MedianUdafImpl();
     }
 
-    private static class MedianUdafImpl extends UniformSamplingReservoirFloatUdaf {
+    private static class MedianUdafImpl extends UniformSamplingReservoirDoubleUdaf {
 
         @Override
-        public Float map(Struct agg) {
-            List<Float> samples = agg.getArray(UniformSamplingReservoirFloatUdaf.VALUES);
-            if (samples.isEmpty()) return 0f;
+        public Double map(Struct agg) {
+            List<Double> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
+            if (samples.isEmpty()) return 0.0;
 
-            return (float) StatUtils.percentile(samples.stream().mapToDouble(v -> v).toArray(), 50);
+            return StatUtils.percentile(samples.stream().mapToDouble(v -> v).toArray(), 50);
         }
     }
 }

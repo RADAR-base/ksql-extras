@@ -18,23 +18,20 @@ public class StdDevUdaf {
 
     @UdafFactory(
             description = "Calculates the standard deviation of float values in a stream.",
-            aggregateSchema = "STRUCT<VALUES ARRAY<float>, COUNT bigint>"
+            aggregateSchema = "STRUCT<SAMPLES ARRAY<double>, COUNT bigint>"
     )
-    public static Udaf<Float, Struct, Float> createUdaf() {
+    public static Udaf<Double, Struct, Double> createUdaf() {
         return new StdDevUdafImpl();
     }
 
-    private static class StdDevUdafImpl extends UniformSamplingReservoirFloatUdaf {
+    private static class StdDevUdafImpl extends UniformSamplingReservoirDoubleUdaf {
 
         @Override
-        public Float map(Struct agg) {
-            List<Float> samples = agg.getArray(UniformSamplingReservoirFloatUdaf.VALUES);
-            if (samples.isEmpty()) return 0f;
+        public Double map(Struct agg) {
+            List<Double> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
+            if (samples.isEmpty()) return 0.0;
 
-            double stdDev =
-                    Math.sqrt(StatUtils.variance(samples.stream().mapToDouble(v -> v).toArray()));
-
-            return (float) stdDev;
+            return Math.sqrt(StatUtils.variance(samples.stream().mapToDouble(v -> v).toArray()));
         }
     }
 }

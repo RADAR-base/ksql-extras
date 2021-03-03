@@ -19,22 +19,22 @@ public class InterQuartileRangeUdaf {
 
     @UdafFactory(
             description = "Calculates the Inter-Quartile Range of values in a stream.",
-            aggregateSchema = "STRUCT<VALUES ARRAY<float>, COUNT bigint>"
+            aggregateSchema = "STRUCT<SAMPLES ARRAY<double>, COUNT bigint>"
     )
-    public static Udaf<Float, Struct, Float> createUdaf() {
+    public static Udaf<Double, Struct, Double> createUdaf() {
         return new InterQuartileRangeUdafImpl();
     }
 
-    private static class InterQuartileRangeUdafImpl extends UniformSamplingReservoirFloatUdaf {
+    private static class InterQuartileRangeUdafImpl extends UniformSamplingReservoirDoubleUdaf {
 
         @Override
-        public Float map(Struct agg) {
-            List<Float> samples = agg.getArray(UniformSamplingReservoirFloatUdaf.VALUES);
-            if (samples.isEmpty()) return 0f;
+        public Double map(Struct agg) {
+            List<Double> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
+            if (samples.isEmpty()) return 0.0;
 
             DescriptiveStatistics ds =
                     new DescriptiveStatistics(samples.stream().mapToDouble(v -> v).toArray());
-            return (float) (ds.getPercentile(75) - ds.getPercentile(25));
+            return (ds.getPercentile(75) - ds.getPercentile(25));
         }
     }
 }

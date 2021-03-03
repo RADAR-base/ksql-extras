@@ -8,46 +8,46 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
-public abstract class UniformSamplingReservoirFloatUdaf implements Udaf<Float, Struct, Float> {
+public abstract class UniformSamplingReservoirDoubleUdaf implements Udaf<Double, Struct, Double> {
 
-    public static final String VALUES = "VALUES";
+    public static final String SAMPLES = "SAMPLES";
     public static final String COUNT = "COUNT";
     public static final Schema STRUCT_RESERVOIR = SchemaBuilder.struct().optional()
-            .field(VALUES, SchemaBuilder.array(Schema.FLOAT32_SCHEMA).optional())
+            .field(SAMPLES, SchemaBuilder.array(Schema.OPTIONAL_FLOAT64_SCHEMA).optional())
             .field(COUNT, Schema.OPTIONAL_INT64_SCHEMA)
             .build();
     private static final int MAX_SIZE_DEFAULT = 9999;
     private final int maxSize;
 
-    public UniformSamplingReservoirFloatUdaf() {
+    public UniformSamplingReservoirDoubleUdaf() {
         this.maxSize = MAX_SIZE_DEFAULT;
     }
 
-    public UniformSamplingReservoirFloatUdaf(int maxSize) {
+    public UniformSamplingReservoirDoubleUdaf(int maxSize) {
         this.maxSize = maxSize;
     }
 
     @Override
     public Struct initialize() {
         return new Struct(STRUCT_RESERVOIR)
-                .put(VALUES, new ArrayList<Float>() {
+                .put(SAMPLES, new ArrayList<Double>() {
                 })
                 .put(COUNT, 0);
     }
 
     @Override
-    public Struct aggregate(Float current, Struct aggregate) {
+    public Struct aggregate(Double current, Struct aggregate) {
         if (current==null) return aggregate;
 
-        List<Float> samples = aggregate.getArray(VALUES);
+        List<Double> samples = aggregate.getArray(SAMPLES);
         long count = aggregate.getInt64(COUNT);
 
         return new Struct(STRUCT_RESERVOIR)
-                .put(VALUES, add(current, samples, count))
+                .put(SAMPLES, add(current, samples, count))
                 .put(COUNT, ++count);
     }
 
-    private List<Float> add(Float current, List<Float> samples, long count) {
+    private List<Double> add(Double current, List<Double> samples, long count) {
         if (samples.size()==maxSize) {
             long replaceIndex = ThreadLocalRandom.current().nextLong(count);
             if (replaceIndex < maxSize) {

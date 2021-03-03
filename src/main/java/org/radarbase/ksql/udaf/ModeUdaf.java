@@ -19,20 +19,20 @@ public class ModeUdaf {
 
     @UdafFactory(
             description = "Calculates the mode of values in a stream.",
-            aggregateSchema = "STRUCT<VALUES ARRAY<float>, COUNT bigint>"
+            aggregateSchema = "STRUCT<SAMPLES ARRAY<double>, COUNT bigint>"
     )
-    public static Udaf<Float, Struct, Float> createUdaf() {
+    public static Udaf<Double, Struct, Double> createUdaf() {
         return new ModeUdafImpl();
     }
 
-    private static class ModeUdafImpl extends UniformSamplingReservoirFloatUdaf {
+    private static class ModeUdafImpl extends UniformSamplingReservoirDoubleUdaf {
 
         @Override
-        public Float map(Struct agg) {
-            List<Float> samples = agg.getArray(UniformSamplingReservoirFloatUdaf.VALUES);
-            if (samples.isEmpty()) return 0f;
+        public Double map(Struct agg) {
+            List<Float> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
+            if (samples.isEmpty()) return 0.0;
 
-            return (float) StatUtils.mode(samples.stream().mapToDouble(v -> v).toArray())[0];
+            return StatUtils.mode(samples.stream().mapToDouble(v -> v).toArray())[0];
         }
     }
 }
