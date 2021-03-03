@@ -5,6 +5,7 @@ import io.confluent.ksql.function.udaf.UdafDescription;
 import io.confluent.ksql.function.udaf.UdafFactory;
 import java.util.List;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.kafka.connect.data.Struct;
 
 @UdafDescription(name = "iqr",
         author = "yatharthranjan",
@@ -16,19 +17,23 @@ public class InterQuartileRangeUdaf {
 
     }
 
-    @UdafFactory(description = "Calculates the Inter-Quartile Range of values in a stream.")
-    public static Udaf<Float, List<Float>, Float> createUdaf() {
+    @UdafFactory(
+            description = "Calculates the Inter-Quartile Range of values in a stream.",
+            aggregateSchema = "STRUCT<VALUES ARRAY<float>, COUNT bigint>"
+    )
+    public static Udaf<Float, Struct, Float> createUdaf() {
         return new InterQuartileRangeUdafImpl();
     }
 
-    private static class InterQuartileRangeUdafImpl extends AbstractListUdaf<Float> {
+    private static class InterQuartileRangeUdafImpl extends UniformSamplingReservoirFloatUdaf {
 
         @Override
-        public Float map(List<Float> agg) {
-            if (agg.isEmpty()) return 0f;
+        public Float map(Struct agg) {
+            List<Float> samples = agg.getArray(UniformSamplingReservoirFloatUdaf.VALUES);
+            if (samples.isEmpty()) return 0f;
 
             DescriptiveStatistics ds =
-                    new DescriptiveStatistics(agg.stream().mapToDouble(v -> v).toArray());
+                    new DescriptiveStatistics(samples.stream().mapToDouble(v -> v).toArray());
             return (float) (ds.getPercentile(75) - ds.getPercentile(25));
         }
     }
