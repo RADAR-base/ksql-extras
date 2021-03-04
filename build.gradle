@@ -30,6 +30,10 @@ dependencies {
     implementation "org.apache.kafka:kafka_2.13:2.5.0"
     implementation "org.apache.kafka:connect-api:2.5.0"
     implementation "org.apache.commons:commons-math3:3.5"
+
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.1")
+    //testImplementation("org.junit.jupiter:junit-jupiter-params:5.7.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.1")
 }
 
 apply plugin: "com.github.johnrengelman.shadow"
@@ -54,6 +58,15 @@ checkstyle {
     configDir file("config/checkstyle")
     toolVersion "8.20"
     showViolations = false
+}
+
+test {
+    useJUnitPlatform {
+        // includeTags 'fast', 'smoke & feature-a'
+        // excludeTags 'slow', 'ci'
+        includeEngines 'junit-jupiter'
+        // excludeEngines 'junit-vintage'
+    }
 }
 
 assemble.dependsOn shadowJar
