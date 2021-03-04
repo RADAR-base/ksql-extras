@@ -30,7 +30,7 @@ public class MedianUdaf {
         @Override
         public Double map(Struct agg) {
             List<Double> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
-            if (samples.isEmpty()) return 0.0;
+            if (samples.isEmpty()) return null;
 
             return StatUtils.percentile(samples.stream().mapToDouble(v -> v).toArray(), 50);
         }

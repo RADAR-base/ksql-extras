@@ -26,10 +26,14 @@ public class StdDevUdaf {
 
     private static class StdDevUdafImpl extends UniformSamplingReservoirDoubleUdaf {
 
+        public StdDevUdafImpl() {
+            super(5000);
+        }
+
         @Override
         public Double map(Struct agg) {
             List<Double> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
-            if (samples.isEmpty()) return 0.0;
+            if (samples.isEmpty()) return null;
 
             return Math.sqrt(StatUtils.variance(samples.stream().mapToDouble(v -> v).toArray()));
         }
