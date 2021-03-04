@@ -5,6 +5,7 @@ import io.confluent.ksql.function.udaf.UdafDescription;
 import io.confluent.ksql.function.udaf.UdafFactory;
 import java.util.List;
 import org.apache.commons.math3.stat.StatUtils;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 
 @UdafDescription(name = "std_dev",
@@ -24,15 +25,15 @@ public class StdDevUdaf {
         return new StdDevUdafImpl();
     }
 
-    private static class StdDevUdafImpl extends UniformSamplingReservoirDoubleUdaf {
+    private static class StdDevUdafImpl extends UniformSamplingReservoirUdaf<Double> {
 
         public StdDevUdafImpl() {
-            super(5000);
+            super(5000, Schema.OPTIONAL_FLOAT64_SCHEMA);
         }
 
         @Override
         public Double map(Struct agg) {
-            List<Double> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
+            List<Double> samples = agg.getArray(UniformSamplingReservoirUdaf.SAMPLES);
             if (samples.isEmpty()) return null;
 
             return Math.sqrt(StatUtils.variance(samples.stream().mapToDouble(v -> v).toArray()));

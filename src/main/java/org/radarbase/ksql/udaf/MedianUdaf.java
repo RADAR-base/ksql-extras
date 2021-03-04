@@ -5,6 +5,7 @@ import io.confluent.ksql.function.udaf.UdafDescription;
 import io.confluent.ksql.function.udaf.UdafFactory;
 import java.util.List;
 import org.apache.commons.math3.stat.StatUtils;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 
 @UdafDescription(name = "median",
@@ -25,11 +26,15 @@ public class MedianUdaf {
         return new MedianUdafImpl();
     }
 
-    private static class MedianUdafImpl extends UniformSamplingReservoirDoubleUdaf {
+    private static class MedianUdafImpl extends UniformSamplingReservoirUdaf<Double> {
+
+        public MedianUdafImpl() {
+            super(Schema.OPTIONAL_FLOAT64_SCHEMA);
+        }
 
         @Override
         public Double map(Struct agg) {
-            List<Double> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
+            List<Double> samples = agg.getArray(UniformSamplingReservoirUdaf.SAMPLES);
             if (samples.isEmpty()) return null;
 
             return StatUtils.percentile(samples.stream().mapToDouble(v -> v).toArray(), 50);

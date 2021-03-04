@@ -17,46 +17,52 @@ import org.apache.kafka.connect.data.Struct;
  * As long as the number of samples is lower than the maximum size of the reservoir, the measures
  * are computed exactly.
  */
-public abstract class UniformSamplingReservoirDoubleUdaf implements Udaf<Double, Struct, Double> {
+@SuppressWarnings("PMD.DataflowAnomalyAnalysis")
+public abstract class UniformSamplingReservoirUdaf<T> implements Udaf<T, Struct, T> {
 
     public static final String SAMPLES = "SAMPLES";
     public static final String COUNT = "COUNT";
-    public static final Schema STRUCT_RESERVOIR = SchemaBuilder.struct().optional()
-            .field(SAMPLES, SchemaBuilder.array(Schema.OPTIONAL_FLOAT64_SCHEMA).optional().build())
-            .field(COUNT, Schema.OPTIONAL_INT64_SCHEMA)
-            .build();
     private static final int MAX_SIZE_DEFAULT = 1000;
+    private final Schema structSchema;
     private final int maxSize;
 
-    public UniformSamplingReservoirDoubleUdaf() {
+    public UniformSamplingReservoirUdaf(Schema arrayValues) {
         this.maxSize = MAX_SIZE_DEFAULT;
+        structSchema = SchemaBuilder.struct().optional()
+                .field(SAMPLES, SchemaBuilder.array(arrayValues).optional().build())
+                .field(COUNT, Schema.OPTIONAL_INT64_SCHEMA)
+                .build();
     }
 
-    public UniformSamplingReservoirDoubleUdaf(int maxSize) {
+    public UniformSamplingReservoirUdaf(int maxSize, Schema arrayValues) {
         this.maxSize = maxSize;
+        structSchema = SchemaBuilder.struct().optional()
+                .field(SAMPLES, SchemaBuilder.array(arrayValues).optional().build())
+                .field(COUNT, Schema.OPTIONAL_INT64_SCHEMA)
+                .build();
     }
 
     @Override
     public Struct initialize() {
-        return new Struct(STRUCT_RESERVOIR)
-                .put(SAMPLES, new ArrayList<Double>() {
+        return new Struct(structSchema)
+                .put(SAMPLES, new ArrayList<T>() {
                 })
                 .put(COUNT, 0L);
     }
 
     @Override
-    public Struct aggregate(Double current, Struct aggregate) {
+    public Struct aggregate(T current, Struct aggregate) {
         if (current==null) return aggregate;
 
-        List<Double> samples = aggregate.getArray(SAMPLES);
+        List<T> samples = aggregate.getArray(SAMPLES);
         long count = aggregate.getInt64(COUNT);
 
-        return new Struct(STRUCT_RESERVOIR)
+        return new Struct(structSchema)
                 .put(SAMPLES, add(current, samples, count))
                 .put(COUNT, ++count);
     }
 
-    private List<Double> add(Double current, List<Double> samples, long count) {
+    private List<T> add(T current, List<T> samples, long count) {
         if (samples.size()==maxSize) {
             long replaceIndex = ThreadLocalRandom.current().nextLong(count);
             if (replaceIndex < maxSize) {
@@ -78,38 +84,42 @@ public abstract class UniformSamplingReservoirDoubleUdaf implements Udaf<Double,
      */
     @Override
     public Struct merge(Struct aggOne, Struct aggTwo) {
-        List<Double> samples1 = aggOne.getArray(SAMPLES);
-        List<Double> samples2 = aggTwo.getArray(SAMPLES);
+        List<T> samples1 = aggOne.getArray(SAMPLES);
+        List<T> samples2 = aggTwo.getArray(SAMPLES);
 
         if (samples1.isEmpty()) return aggTwo;
         if (samples2.isEmpty()) return aggOne;
 
-        List<Double> newSamples = new ArrayList<>();
+        List<T> newSamples = new ArrayList<>();
         Random random = ThreadLocalRandom.current();
         long aggOneCount = aggOne.getInt64(COUNT);
         long aggTwoCount = aggTwo.getInt64(COUNT);
         double prob1 = aggOneCount / (double) (aggOneCount + aggTwoCount);
 
         while (newSamples.size() < maxSize && (!samples1.isEmpty() || !samples2.isEmpty())) {
-            List<Double> sampleList;
+            List<T> sampleList;
             if (samples2.isEmpty()
                     || (!samples1.isEmpty()
-                    && ThreadLocalRandom.current().nextDouble() < prob1)
+                    && random.nextDouble() < prob1)
             ) {
                 sampleList = samples1;
             } else {
                 sampleList = samples2;
             }
-            int idx = ThreadLocalRandom.current().nextInt(sampleList.size());
+            int idx = random.nextInt(sampleList.size());
             newSamples.add(sampleList.remove(idx));
         }
 
-        return new Struct(STRUCT_RESERVOIR)
+        return new Struct(structSchema)
                 .put(SAMPLES, newSamples)
                 .put(COUNT, aggOneCount + aggTwoCount);
     }
 
     public int getMaxSize() {
         return maxSize;
+    }
+
+    public Schema getStructSchema() {
+        return structSchema;
     }
 }

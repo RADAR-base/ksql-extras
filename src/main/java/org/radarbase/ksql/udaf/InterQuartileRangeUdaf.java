@@ -5,6 +5,7 @@ import io.confluent.ksql.function.udaf.UdafDescription;
 import io.confluent.ksql.function.udaf.UdafFactory;
 import java.util.List;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 
 @UdafDescription(name = "iqr",
@@ -25,11 +26,15 @@ public class InterQuartileRangeUdaf {
         return new InterQuartileRangeUdafImpl();
     }
 
-    private static class InterQuartileRangeUdafImpl extends UniformSamplingReservoirDoubleUdaf {
+    private static class InterQuartileRangeUdafImpl extends UniformSamplingReservoirUdaf<Double> {
+
+        public InterQuartileRangeUdafImpl() {
+            super(Schema.OPTIONAL_FLOAT64_SCHEMA);
+        }
 
         @Override
         public Double map(Struct agg) {
-            List<Double> samples = agg.getArray(UniformSamplingReservoirDoubleUdaf.SAMPLES);
+            List<Double> samples = agg.getArray(UniformSamplingReservoirUdaf.SAMPLES);
             if (samples.isEmpty()) return null;
 
             DescriptiveStatistics ds =
