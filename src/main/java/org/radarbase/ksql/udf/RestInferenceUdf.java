@@ -23,6 +23,7 @@ import org.radarbase.ksql.util.HttpClientFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.DataflowAnomalyAnalysis")
 @UdfDescription(name = "api_inference",
         author = "yatharthranjan",
         version = "1.0.0",
@@ -31,11 +32,11 @@ public class RestInferenceUdf implements Configurable {
 
     private static final Logger logger = LoggerFactory.getLogger(RestInferenceUdf.class);
 
-    private final OkHttpClient httpClient;
-    private final ObjectMapper objectMapper;
-    private String apiUrl;
+    private final transient OkHttpClient httpClient;
+    private final transient ObjectMapper objectMapper;
+    private transient String apiUrl;
 
-    private RestInferenceUdf() {
+    public RestInferenceUdf() {
         httpClient = HttpClientFactory.getClient();
         objectMapper = new ObjectMapper();
     }
@@ -136,5 +137,4 @@ public class RestInferenceUdf implements Configurable {
             return null;
         }
     }
-
 }
