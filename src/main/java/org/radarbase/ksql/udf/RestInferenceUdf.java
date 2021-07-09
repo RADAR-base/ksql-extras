@@ -42,7 +42,7 @@ public class RestInferenceUdf implements Configurable {
 
     @Override
     public void configure(Map<String, ?> configs) {
-        apiUrl = (String) configs.get("ksql.functions.radar.inference.api.base.url");
+        apiUrl = (String) configs.get("ksql.functions.api_inference.base.url");
     }
 
     @Udf(
