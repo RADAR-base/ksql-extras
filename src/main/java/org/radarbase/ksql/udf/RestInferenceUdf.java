@@ -45,7 +45,7 @@ public class RestInferenceUdf implements Configurable {
 
     @Udf(
             description = "Run inference in realtime by loading data from the database (i.e. we " +
-                    "only pass metadata as params). This will return the json response as is in " +
+                    "only pass metadata as params). This will return the json response as-is in " +
                     "String format. If needed, the values can be extracted in KSQL using " +
                     "the 'EXTRACTJSONFIELD' scalar function."
     )
@@ -76,10 +76,9 @@ public class RestInferenceUdf implements Configurable {
             modelVersion = "best";
         }
 
-        URI uri;
-        uri = URI
+        URI uri = URI
                 .create(apiUrl)
-                .resolve("/model/" + modelName + "/" + modelVersion + "/metadata-invocation");
+                .resolve("/models/" + modelName + "/" + modelVersion + "/metadata-invocation");
 
         JsonNode jsonNode = objectMapper.createObjectNode()
                 .put("filename", dataLoaderModule)
