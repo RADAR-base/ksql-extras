@@ -1,24 +1,20 @@
 package org.radarbase.ksql.udf;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.confluent.ksql.function.udf.Udf;
 import io.confluent.ksql.function.udf.UdfDescription;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
-import okhttp3.FormBody;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.kafka.common.Configurable;
+import org.apache.log4j.BasicConfigurator;
 import org.radarbase.ksql.util.HttpClientFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +35,7 @@ public class RestInferenceUdf implements Configurable {
     public RestInferenceUdf() {
         httpClient = HttpClientFactory.getClient();
         objectMapper = new ObjectMapper();
+        BasicConfigurator.configure();
     }
 
     @Override
@@ -47,9 +44,12 @@ public class RestInferenceUdf implements Configurable {
     }
 
     @Udf(
-            description = "Run inference in realtime by loading data from the database."
+            description = "Run inference in realtime by loading data from the database (i.e. we " +
+                    "only pass metadata as params). This will return the json response as is in " +
+                    "String format. If needed, the values can be extracted in KSQL using " +
+                    "the 'EXTRACTJSONFIELD' scalar function."
     )
-    public Map<String, Object> runInference(
+    public String runMetadataInference(
             String dataLoaderModule,
             String dataLoaderClass,
             String dbName,
@@ -58,8 +58,8 @@ public class RestInferenceUdf implements Configurable {
             String modelName,
             String modelVersion,
             String sourceId,
-            Timestamp startTime,
-            Timestamp endTime
+            Double startTime,
+            Double endTime
     ) {
         if (dataLoaderModule==null
                 || dataLoaderClass==null
@@ -72,68 +72,63 @@ public class RestInferenceUdf implements Configurable {
             return null;
         }
 
-        if (startTime==null) {
-            startTime = Timestamp.from(Instant.now().minus(Duration.ofDays(1)));
-        }
-
-        if (endTime==null) {
-            endTime = Timestamp.from(Instant.now());
-        }
-
         if (modelVersion==null) {
             modelVersion = "best";
         }
 
-        URI uri = URI
+        URI uri;
+        uri = URI
                 .create(apiUrl)
                 .resolve("/model/" + modelName + "/" + modelVersion + "/metadata-invocation");
 
-        RequestBody formBody = new FormBody.Builder()
-                .add("filename", dataLoaderModule)
-                .add("classname", dataLoaderClass)
-                .add("dbname", dbName)
-                .add("starttime", startTime.toString())
-                .add("endtime", endTime.toString())
-                .add("projectid", projectId)
-                .add("userid", userId)
-                .add("sourceid", sourceId)
-                .build();
+        JsonNode jsonNode = objectMapper.createObjectNode()
+                .put("filename", dataLoaderModule)
+                .put("classname", dataLoaderClass)
+                .put("dbname", dbName)
+                .put("starttime", startTime)
+                .put("endtime", endTime)
+                .put("project_id", projectId)
+                .put("user_id", userId)
+                .put("source_id", sourceId);
+
+        String json = jsonNode.toString();
+
+        RequestBody body = RequestBody.create(json, MediaType.parse("application/json"));
+        logger.debug("Requesting {} with body {}", uri, json);
 
         Request request;
         try {
             request = new Request.Builder()
                     .url(uri.toURL())
-                    .post(formBody)
+                    .post(body)
                     .build();
         } catch (MalformedURLException exc) {
             logger.warn("The Request URL was invalid: {}", exc.getMessage());
             return null;
         }
 
+        logger.debug("Going to make HTTP call");
         try (Response response = httpClient.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                return objectMapper.readValue(Objects.requireNonNull(
-                        response.body(), "There was no data returned."
-                        ).bytes(),
-                        new TypeReference<Map<String, Object>>() {
-                        });
-            } else {
-                String resBody = null;
-                if (response.body()!=null) {
-                    resBody = response.body().string();
-                }
-                logger.warn("The request was not successful: {}: \n\tbody={}", response, resBody);
-                return null;
-            }
-        } catch (JsonProcessingException exc) {
-            logger.warn(
-                    "There was an error parsing the json response: {}, {}",
-                    exc.getMessage(),
-                    exc.getCause().getMessage()
-            );
-            return null;
+            return handleResponse(response);
         } catch (IOException exc) {
-            logger.warn("There was an error making request to inference api: {}", exc.getMessage());
+            logger.warn("There was an error making request to invocation api: {}",
+                    exc.getMessage());
+            return null;
+        }
+    }
+
+    private String handleResponse(Response response) throws IOException {
+        if (response.isSuccessful()) {
+            if (response.body()==null) {
+                logger.warn("The result body was null");
+                return null;
+            } else {
+                String resBody = response.body().string();
+                logger.debug("Response Body is: {}", resBody);
+                return resBody;
+            }
+        } else {
+            logger.warn("The request was not successful: {}.", response);
             return null;
         }
     }

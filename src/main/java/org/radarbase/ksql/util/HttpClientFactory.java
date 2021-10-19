@@ -14,9 +14,9 @@ public class HttpClientFactory {
     public static OkHttpClient getClient() {
         if (_INSTANCE==null) {
             _INSTANCE = new OkHttpClient.Builder()
-                    .callTimeout(Duration.ofSeconds(30))
-                    .readTimeout(Duration.ofSeconds(30))
-                    .connectTimeout(Duration.ofSeconds(20))
+                    .callTimeout(Duration.ofSeconds(60))
+                    .readTimeout(Duration.ofSeconds(60))
+                    .connectTimeout(Duration.ofSeconds(40))
                     .build();
         }
         return _INSTANCE;
