@@ -59,7 +59,8 @@ public class RestInferenceUdf implements Configurable {
             String modelVersion,
             String sourceId,
             Double startTime,
-            Double endTime
+            Double endTime,
+            String metric
     ) {
         if (dataLoaderModule==null
                 || dataLoaderClass==null
@@ -76,9 +77,14 @@ public class RestInferenceUdf implements Configurable {
             modelVersion = "best";
         }
 
+        String query = "";
+        if (modelVersion.equals("best") && metric!=null && !metric.isEmpty()) {
+            query = "?metric=" + metric;
+        }
+
         URI uri = URI
                 .create(apiUrl)
-                .resolve("/models/" + modelName + "/" + modelVersion + "/metadata-invocation");
+                .resolve("/models/" + modelName + "/" + modelVersion + "/metadata-invocation" + query);
 
         JsonNode jsonNode = objectMapper.createObjectNode()
                 .put("filename", dataLoaderModule)
