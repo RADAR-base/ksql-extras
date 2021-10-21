@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.confluent.ksql.function.udf.Udf;
 import io.confluent.ksql.function.udf.UdfDescription;
+import io.confluent.ksql.function.udf.UdfParameter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -50,17 +51,30 @@ public class RestInferenceUdf implements Configurable {
                     "the 'EXTRACTJSONFIELD' scalar function."
     )
     public String runMetadataInference(
-            String dataLoaderModule,
-            String dataLoaderClass,
-            String dbName,
-            String projectId,
-            String userId,
-            String modelName,
-            String modelVersion,
-            String sourceId,
-            Double startTime,
-            Double endTime,
-            String metric
+            @UdfParameter(description = "The python module name in model-builder to use to load " +
+                    "the data")
+                    String dataLoaderModule,
+            @UdfParameter(description = "The python class in the module to use to load the data.")
+                    String dataLoaderClass,
+            @UdfParameter(description = "The database containing the features to use.")
+                    String dbName,
+            @UdfParameter(description = "The RADAR projectId of the subject to run inference for.")
+                    String projectId,
+            @UdfParameter(description = "The RADAR subjectId to run inference for.")
+                    String userId,
+            @UdfParameter(description = "The model name to use for inference.")
+                    String modelName,
+            @UdfParameter(description = "The model version to use for inference.")
+                    String modelVersion,
+            @UdfParameter(description = "The RADAR sourceId.")
+                    String sourceId,
+            @UdfParameter(description = "The start time of the data to run inference on.")
+                    Double startTime,
+            @UdfParameter(description = "The end time of the data to run inference on.")
+                    Double endTime,
+            @UdfParameter(description = "The metric to use to define the best model. Can only be " +
+                    "used with modelVersion='best'. Otherwise null.")
+                    String metric
     ) {
         if (dataLoaderModule==null
                 || dataLoaderClass==null
